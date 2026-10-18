@@ -1,0 +1,122 @@
+<div class="container py-4">
+  <h1 class="mb-4">Gestion des produits</h1>
+
+  @if (vm.erreur()) {
+    <div class="alert alert-danger" role="alert">{{ vm.erreur() }}</div>
+  }
+  @if (vm.message()) {
+    <div class="alert alert-success" role="status">{{ vm.message() }}</div>
+  }
+
+  <form class="card card-body mb-4" (ngSubmit)="vm.enregistrer()">
+    <h2 class="h5">
+      {{ vm.modeEdition() ? 'Modifier le produit n° ' + vm.idEnEdition() : 'Ajouter un produit' }}
+    </h2>
+    <div class="row g-2">
+      <div class="col-md-5">
+        <input type="text" name="libelle" class="form-control" placeholder="Libellé"
+               [(ngModel)]="vm.libelle" required />
+      </div>
+      <div class="col-md-3">
+        <input type="number" step="0.01" min="0" name="prix" class="form-control" placeholder="Prix"
+               [(ngModel)]="vm.prix" required />
+      </div>
+      <div class="col-md-4">
+        <input type="number" min="0" name="qteStock" class="form-control" placeholder="Quantité en stock"
+               [(ngModel)]="vm.qteStock" required />
+      </div>
+    </div>
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="!vm.formulaireValide()">
+        {{ vm.modeEdition() ? 'Enregistrer les modifications' : 'Ajouter le produit' }}
+      </button>
+      @if (vm.modeEdition()) {
+        <button type="button" class="btn btn-outline-secondary" (click)="vm.annuler()">Annuler</button>
+      }
+    </div>
+  </form>
+
+  <section class="card card-body mb-3" aria-label="Recherche et filtres">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label" for="recherche">Rechercher un libellé</label>
+        <input id="recherche" type="search" class="form-control" placeholder="Ex. : clavier"
+               [(ngModel)]="vm.recherche" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="prixMax">Prix maximum</label>
+        <input id="prixMax" type="number" min="0" step="0.01" class="form-control"
+               [(ngModel)]="vm.prixMax" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="stock">État du stock</label>
+        <select id="stock" class="form-select" [(ngModel)]="vm.filtreStock">
+          <option value="TOUS">Tous</option>
+          <option value="EN_STOCK">En stock</option>
+          <option value="STOCK_FAIBLE">Stock faible (moins de {{ vm.seuilStockFaible }})</option>
+          <option value="RUPTURE">En rupture</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-grid">
+        <button type="button" class="btn btn-outline-secondary"
+                [disabled]="!vm.filtresActifs()" (click)="vm.reinitialiserFiltres()">
+          Effacer
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <p class="mb-0 text-muted">
+      {{ vm.nombreAffiches() }} produit(s) affiché(s) sur {{ vm.nombreTotal() }}
+    </p>
+    <button type="button" class="btn btn-sm btn-outline-primary"
+            [disabled]="vm.chargement()" (click)="vm.charger()">
+      {{ vm.chargement() ? 'Chargement…' : 'Actualiser' }}
+    </button>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th>ID</th><th>Libellé</th>
+          <th class="text-end">Prix</th><th class="text-end">Stock</th><th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (produit of vm.produitsFiltres(); track produit.id) {
+          <tr [class.en-edition]="produit.id === vm.idEnEdition()">
+            <td>{{ produit.id }}</td>
+            <td>{{ produit.libelle }}</td>
+            <td class="text-end">{{ produit.prix | number: '1.2-2' }}</td>
+            <td class="text-end">
+              <span class="badge stock"
+                    [class.text-bg-danger]="vm.statutStock(produit) === 'rupture'"
+                    [class.text-bg-warning]="vm.statutStock(produit) === 'faible'"
+                    [class.text-bg-success]="vm.statutStock(produit) === 'ok'">
+                {{ produit.qteStock }}
+              </span>
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                      (click)="vm.modifier(produit)">Modifier</button>
+              <button type="button" class="btn btn-sm btn-outline-danger"
+                      (click)="onSupprimer(produit)">Supprimer</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">
+              @if (vm.filtresActifs()) {
+                Aucun produit ne correspond à la recherche.
+              } @else {
+                Aucun produit. Ajoutez-en un avec le formulaire ci-dessus.
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
